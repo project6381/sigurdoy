@@ -1,4 +1,5 @@
-import panel
+#import panel
+from class_panel import Panel
 import elevator
 import time
 
@@ -7,9 +8,13 @@ def main():
 	#floorDestination = int(raw_input("->"))
 
 	
-	panel.read_pressed_button()
 
+	kok = Panel()
+	while True:
+		print kok.read_pressed_button()	
+		time.sleep(3)
 	
+
 	print 'lala'
 	#goFloor = 1
 	#while True:

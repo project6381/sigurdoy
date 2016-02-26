@@ -1,15 +1,16 @@
 import panel
 import elevator
-import t_read_buttons
+import time
+
 
 def main():
 	#floorDestination = int(raw_input("->"))
 
+	
+	panel.read_pressed_button()
 
 	
-	t_read_buttons.thready()
-	
-
+	print 'lala'
 	#goFloor = 1
 	#while True:
 

@@ -1,33 +1,30 @@
 #import panel
 from class_panel import Panel
+from class_broadcast import Broadcast 
 import elevator
 import time
-
 
 def main():
 	#floorDestination = int(raw_input("->"))
 
 	
 
-	kok = Panel()
-	while True:
-		print kok.read_pressed_button()	
-		time.sleep(3)
+	#panel1 = Panel()
+	#panel1.read_pressed_button()
+	broadcast1 = Broadcast()
+
+	print broadcast1.read_message()
+
+	time.sleep(1)
+
+	broadcast1.send('hei, dette er heis1')
+	broadcast1.send('heis1 er sulten')
+
 	
 
-	print 'lala'
-	#goFloor = 1
-	#while True:
-
-#		nextFloor = panel.read_buttons()
-#		if nextFloor >= 0:
-#			goFloor = nextFloor
-#						
-#		elevator.go_to_floor(nextFloor)
-
-
-
-
+	time.sleep(1)
+	print broadcast1.read_message()
+	print broadcast1.read_message()
 
 if __name__ == "__main__":
     main()

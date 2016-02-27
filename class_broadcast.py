@@ -50,7 +50,7 @@ class Broadcast:
 
 	def send(self,data):
 	
-		send = ('<broadcast>', 17853)
+		send = ('<broadcast>', 17852)
 		udp = socket(AF_INET, SOCK_DGRAM)
 		udp.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 		message='<%s;%s>' % (str(len(data)), data)
@@ -59,7 +59,7 @@ class Broadcast:
 
 
 	def start(self,thread):
-			#thread.daemon = True # Terminate thread when "main" is finished
+			thread.daemon = True # Terminate thread when "main" is finished
 			thread.start()
 			#thread.join()
 

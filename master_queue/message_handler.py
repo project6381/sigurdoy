@@ -3,95 +3,114 @@ from threading import Thread, Lock
 import time 
 import broadcast 
 from constants import MASTER_TO_SLAVE_PORT, SLAVE_TO_MASTER_PORT
-
+from socket import *
 
 class MessageHandler:
 	def __init__(self):
-		self.message_list = [] 
-		self.message_list_key = Lock()
-		self.master_thread_started = False
-		self.slave_thread_started = False
-		self.polling_master = Thread(target = self.polling_master_messages, args = (),)
-		self.polling_slave = Thread(target = self.polling_slave_messages, args = (),)
+		self.__message_list = [] 
+		self.__message_list_key = Lock()
+		self.__master_thread_started = False
+		self.__slave_thread_started = False
+		self.__polling_master = Thread(target = self.__polling_master_messages, args = (),)
+		self.__polling_slave = Thread(target = self.__polling_slave_messages, args = (),)
+
+
+	def send(self, data, port):
+		send = ('<broadcast>', port)
+		udp = socket(AF_INET, SOCK_DGRAM)
+		udp.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+		message='<%s;%s>' % (str(len(data)), data)
+		udp.sendto(message, send)
+		udp.close()
+
 
 	def read_message(self,port):
 
 		# Check if master or slave thread is already running 
 		if port == MASTER_TO_SLAVE_PORT:
-			if self.master_thread_started is not True:
-				self.start(self.polling_master)
+			if self.__master_thread_started is not True:
+				self.__start(self.__polling_master)
 
 		if port == SLAVE_TO_MASTER_PORT: 
-			if self.slave_thread_started is not True:
-				self.start(self.polling_slave)	
+			if self.__slave_thread_started is not True:
+				self.__start(self.__polling_slave)	
 
-		if self.message_list: 
-			self.message_list_key.acquire()
-			first_element = self.message_list.pop(0)
-			self.message_list_key.release()
+		if self.__message_list: 
+			with self.__message_list_key:
+				first_element = self.__message_list.pop(0)
 			return first_element
 		else:
-			#pass
 			return None
 
 
-	def start(self,thread):
+	def __start(self,thread):
 			thread.daemon = True # Terminate thread when "main" is finished
 			thread.start()
-			#thread.join()
 
+	
+	def __polling_master_messages(self):
 
+		last_master_queue = 'denne beskjeden vil aldri bli hort'
+		self.__master_thread_started = True
 
-
-	def polling_master_messages(self):
-
-		old_master_queue = 'denne beskjeden vil aldri bli hort'
-		self.master_thread_started = True
-
-		# Setup udp
 		port = ('', MASTER_TO_SLAVE_PORT)
 		udp = socket(AF_INET, SOCK_DGRAM)
 		udp.bind(port)
 		udp.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
-		
-		# Fetching data
 		while True:
 			data, address = udp.recvfrom(1024)
-			master_queue = broadcast.errorcheck(data)
-			if master_queue != old_master_queue:
+			master_queue = self.__errorcheck(data)
+			if master_queue != last_master_queue:
 				if master_queue is not None:
-					with self.message_list_key:
-						self.message_list.append(master_queue)
-				#print (self.message_list)		
-				old_master_queue = master_queue
-		#udp.close() 
+					with self.__message_list_key:
+						self.__message_list.append(master_queue)	
+				last_master_queue = master_queue
 
 
-	def polling_slave_messages(self):
+	def __polling_slave_messages(self):
 
-		old_message = 'denne beskjeden vil aldri bli hort'
-		self.slave_thread_started = True
+		last_message = 'denne beskjeden vil aldri bli hort'
+		self.__slave_thread_started = True
 
-		# Setup udp
 		port = ('', SLAVE_TO_MASTER_PORT)
 		udp = socket(AF_INET, SOCK_DGRAM)
 		udp.bind(port)
 		udp.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-
-		
-		# Fetching data
+	
 		while True:
 			data, address = udp.recvfrom(1024)
-			message = broadcast.errorcheck(data)
-			if message != old_message:
+			message = self.__errorcheck(data)
+			if message != last_message:
 				if message is not None:
-					with self.message_list_key:
-						self.message_list.append(message)
-				#print (self.message_list)		
-				old_message = message
-		#udp.close() 
+					with self.__message_list_key:
+						self.__message_list.append(message)		
+				last_message = message
 
 
+	def __errorcheck(self,data):
+		if data[0]=='<' and data[len(data)-1]=='>':
 
+			counter=1
+			separator=False
+			separator_pos=0
+			for char in data:
+				if char == ";" and separator==False:
+					separator_pos=counter
+					separator=True
+				counter+=1
 
+			message_length=str(len(data)-separator_pos-1)
+			test_length=str()
+			for n in range(1,separator_pos-1):
+				test_length+=data[n]
+
+			if test_length==message_length and separator==True:
+				message=str()
+				for n in range(separator_pos,len(data)-1):
+					message+=data[n]
+				return message
+			else:
+				return None
+		else:
+			return None

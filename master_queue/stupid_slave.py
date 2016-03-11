@@ -11,20 +11,24 @@ def main():
 	message_handler = MessageHandler()
 	driver = Driver()
 
+	#my_id = get IP address on this computer
+	my_id = 69
 	
 	while True:
 		
 		
 
-		(floor, button) = driver.pop_floor_panel_queue()
+		(floor,button) = driver.pop_floor_panel_queue()
 
-		message_handler.send_floor_panel_to_master(floor,button,SLAVE_TO_MASTER_PORT)
+		message_handler.send_to_master(floor,button,my_id)
 
 			
 		
 
 
-		master_queue = message_handler.receive_queue_from_master()
+		master_queue = message_handler.receive_from_master()
+
+		
 
 		print master_queue
 		

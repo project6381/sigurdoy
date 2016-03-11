@@ -14,53 +14,57 @@ class MessageHandler:
 		self.__receive_buffer_master_key = Lock()
 		self.__master_thread_started = False
 		self.__slave_thread_started = False
-		self.__master_queue = [0 for i in range(0,16)]
-		self.__polling_master = Thread(target = self.__polling_master_messages, args = (),)
-		self.__polling_slave = Thread(target = self.__polling_slave_messages, args = (),)
+		self.__master_message = [0 for i in range(0,17)]
+		self.__slave_message = [0 for i in range(0,17)]
+		self.__thread_buffering_master = Thread(target = self.__buffering_master_messages, args = (),)
+		self.__thread_buffering_slave = Thread(target = self.__buffering_slave_messages, args = (),)
 
 
-	def receive_queue_from_slave(self):				
+	def receive_from_slave(self):				
 		message = self.__read_message(SLAVE_TO_MASTER_PORT)
 		
 		if message is not None:
 			floor = int(message[0])
-			button = int(message[2])
-			for i in range (0,4):
-				for j in range(0,2):
-					if (floor == i) and (button == j): 
-						self.__master_queue[(i*4)+2*j] = 1
-						self.__master_queue[(i*4)+2*j + 1] = random.randint(1,3)
-							
-		return self.__master_queue
+			button = int(message[1])
+			slave_id = int(message[2:])
+			self.__master_message[(floor*4)+2*button] = 1
+			self.__master_message[(floor*4)+2*button + 1] = random.randint(1,3)
+			self.__master_message[16] = slave_id				
+		return self.__master_message
 
 
-	def send_queue_to_slave(self,master_queue,port):
+	def send_to_slave(self,master_queue,queue_id):
 
 		message = str()
-
+		queue_id = str(queue_id)
+		
 		for i in range(0,len(master_queue)):
-			message += str(master_queue[i])		
-		self.__send(message,port)
+			message += str(master_queue[i])	
+
+
+		message += queue_id
+		print message
+		self.__send(message,MASTER_TO_SLAVE_PORT)
 		time.sleep(0.1)
 
 
 
-	def receive_queue_from_master(self):
+	def receive_from_master(self):
 		
 		message = self.__read_message(MASTER_TO_SLAVE_PORT)
 
 		if message is not None:
 			for i in range (0,4):
 					for j in range(0,2):
-						self.__master_queue[(i*4)+2*j] = int(message[(i*4)+2*j])
-						self.__master_queue[(i*4)+2*j + 1] = int(message[(i*4)+2*j + 1])
+						self.__slave_message[(i*4)+2*j] = int(message[(i*4)+2*j])
+						self.__slave_message[(i*4)+2*j + 1] = int(message[(i*4)+2*j + 1])
 
 		
-		return self.__master_queue
+		return self.__slave_message
 
-	def send_floor_panel_to_master(self,floor,button,port):
+	def send_to_master(self,floor,button,slave_id):
 		if (floor and button) is not None:
-			message = "%i,%i" % (floor,button)
+			message = "%i%i%i" % (floor,button,slave_id)
 			self.__send(message,SLAVE_TO_MASTER_PORT)
 
 
@@ -78,7 +82,7 @@ class MessageHandler:
 		# Check if master or slave thread is already running 
 		if port == MASTER_TO_SLAVE_PORT:
 			if self.__slave_thread_started is not True:
-				self.__start(self.__polling_slave)
+				self.__start(self.__thread_buffering_slave)
 			
 			if self.__receive_buffer_slave: 
 				with self.__receive_buffer_slave_key:
@@ -88,7 +92,7 @@ class MessageHandler:
 
 		if port == SLAVE_TO_MASTER_PORT: 
 			if self.__master_thread_started is not True:
-				self.__start(self.__polling_master)
+				self.__start(self.__thread_buffering_master)
 			
 			if self.__receive_buffer_master: 
 				with self.__receive_buffer_master_key:
@@ -104,7 +108,7 @@ class MessageHandler:
 			thread.start()
 
 	
-	def __polling_master_messages(self):
+	def __buffering_master_messages(self):
 
 		last_master_queue = 'This message will never be heard'
 		self.__master_thread_started = True
@@ -124,7 +128,7 @@ class MessageHandler:
 				last_master_queue = master_queue
 
 
-	def __polling_slave_messages(self):
+	def __buffering_slave_messages(self):
 
 		last_message = 'This message will never be heard'
 		self.__slave_thread_started = True

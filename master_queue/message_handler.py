@@ -6,6 +6,7 @@ from constants import MASTER_TO_SLAVE_PORT, SLAVE_TO_MASTER_PORT
 from socket import *
 import random 
 
+
 class MessageHandler:
 	def __init__(self):
 		self.__receive_buffer_slave = [] 
@@ -14,10 +15,17 @@ class MessageHandler:
 		self.__receive_buffer_master_key = Lock()
 		self.__master_thread_started = False
 		self.__slave_thread_started = False
-		self.__master_message = [0 for i in range(0,17)]
-		self.__slave_message = [0 for i in range(0,17)]
+		#self.__sending_thread_started = False
+		self.__slave_message = {'master_queue': [0]*16,
+								'slave_id': 0,
+								'queue_id': 0}
+
+		self.__master_message = {'master_queue': [0]*16,
+								'queue_id': 0}
+
 		self.__thread_buffering_master = Thread(target = self.__buffering_master_messages, args = (),)
 		self.__thread_buffering_slave = Thread(target = self.__buffering_slave_messages, args = (),)
+		#self.__thread_sending_slave_messages = Thread(target = self.__sending_slave_messages, args = (),)
 
 
 	def receive_from_slave(self):				
@@ -26,11 +34,17 @@ class MessageHandler:
 		if message is not None:
 			floor = int(message[0])
 			button = int(message[1])
-			slave_id = int(message[2:])
-			self.__master_message[(floor*4)+2*button] = 1
-			self.__master_message[(floor*4)+2*button + 1] = random.randint(1,3)
-			self.__master_message[16] = slave_id				
-		return self.__master_message
+			slave_id = int(message[2])
+			queue_id = int(message[3:])
+			self.__slave_message['master_queue'][(floor*4)+2*button] = 1
+			self.__slave_message['master_queue'][(floor*4)+2*button + 1] = random.randint(1,3)
+
+			self.__slave_message['slave_id'] = slave_id
+			self.__slave_message['queue_id'] = queue_id
+
+
+
+		return self.__slave_message
 
 
 	def send_to_slave(self,master_queue,queue_id):
@@ -43,12 +57,27 @@ class MessageHandler:
 
 
 		message += queue_id
-		print message
-		self.__send(message,MASTER_TO_SLAVE_PORT)
-		time.sleep(0.1)
+		
+		for _ in range(0,3):
+			self.__send(message,MASTER_TO_SLAVE_PORT)
+			time.sleep(0.001)
 
 
+		#if self.__sending_thread_started is not True:
+		#	self.__thread_sending_slave_messages.start()
+		#self.__sending_slave_messages(message,MASTER_TO_SLAVE_PORT)
 
+
+	def __sending_slave_messages(self,message):
+		'''
+		self.__sending_thread_started = True
+		time = time.time
+		while time < 2: 
+			self.__send(message,MASTER_TO_SLAVE_PORT)
+			time.sleep(0.05)
+		#self.__sending_thread_started = False	
+		#__thread_sending_slave_messages.exit()	
+		'''
 	def receive_from_master(self):
 		
 		message = self.__read_message(MASTER_TO_SLAVE_PORT)
@@ -56,15 +85,16 @@ class MessageHandler:
 		if message is not None:
 			for i in range (0,4):
 					for j in range(0,2):
-						self.__slave_message[(i*4)+2*j] = int(message[(i*4)+2*j])
-						self.__slave_message[(i*4)+2*j + 1] = int(message[(i*4)+2*j + 1])
+						self.__master_message['master_queue'][(i*4)+2*j] = int(message[(i*4)+2*j])
+						self.__master_message['master_queue'][(i*4)+2*j + 1] = int(message[(i*4)+2*j + 1])
 
+			self.__master_message['queue_id'] = int(message[16:])
 		
-		return self.__slave_message
+		return self.__master_message
 
-	def send_to_master(self,floor,button,slave_id):
+	def send_to_master(self,floor,button,slave_id,queue_id):
 		if (floor and button) is not None:
-			message = "%i%i%i" % (floor,button,slave_id)
+			message = "%i%i%i%i" % (floor,button,slave_id,queue_id)
 			self.__send(message,SLAVE_TO_MASTER_PORT)
 
 
@@ -102,7 +132,6 @@ class MessageHandler:
 
 
 
-
 	def __start(self,thread):
 			thread.daemon = True # Terminate thread when "main" is finished
 			thread.start()
@@ -110,7 +139,7 @@ class MessageHandler:
 	
 	def __buffering_master_messages(self):
 
-		last_master_queue = 'This message will never be heard'
+		last_message = 'This message will never be heard'
 		self.__master_thread_started = True
 
 		port = ('', SLAVE_TO_MASTER_PORT)
@@ -120,13 +149,12 @@ class MessageHandler:
 
 		while True:
 			data, address = udp.recvfrom(1024)
-			master_queue = self.__errorcheck(data)
-			if master_queue != last_master_queue:
-				if master_queue is not None:
+			message = self.__errorcheck(data)
+			if message != last_message:
+				if message is not None:
 					with self.__receive_buffer_master_key:
-						self.__receive_buffer_master.append(master_queue)	
-				last_master_queue = master_queue
-
+						self.__receive_buffer_master.append(message)	
+				last_message = message
 
 	def __buffering_slave_messages(self):
 

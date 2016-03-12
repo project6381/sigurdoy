@@ -1,5 +1,4 @@
 from driver import Driver 
-from elevator_driver import ElevatorDriver 
 from message_handler import MessageHandler
 from constants import SLAVE_TO_MASTER_PORT, MASTER_TO_SLAVE_PORT
 import elevator
@@ -12,25 +11,31 @@ def main():
 	driver = Driver()
 
 	#my_id = get IP address on this computer
-	my_id = 69
-	
+	my_id = 3
+	acknowledge = 4
 	while True:
 		
 		
 
 		(floor,button) = driver.pop_floor_panel_queue()
 
-		message_handler.send_to_master(floor,button,my_id)
+		master_message = message_handler.receive_from_master()
+
+		queue_id = master_message['queue_id']
+
+
+
+		message_handler.send_to_master(floor,button,my_id,queue_id)
 
 			
 		
 
 
-		master_queue = message_handler.receive_from_master()
+		
 
 		
 
-		print master_queue
+		print master_message
 		
 
 

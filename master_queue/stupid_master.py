@@ -6,19 +6,37 @@ import time
 def main():
 	message_handler = MessageHandler()
 	queue_id = 1
+
+
+	active_slaves = 1
+	acknowledges = 0
+	execute_queue = 0
+
+	acknowledged_queue_id = []
+
 	while True:
 		
+
+
+
 		slave_message = message_handler.receive_from_slave()
+		print slave_message
 
 
-		master_queue = slave_message[0:-1]
-		slave_id = slave_message[16]
-		
-		
+		if queue_id == int(slave_message['queue_id']): 
+			acknowledges += 1
+			print '111111111111111111111111111111111111111111111111111111111'
 
-		message_handler.send_to_slave(master_queue,queue_id)
+		if acknowledges == active_slaves:
+			execute_queue = 1
+			print '12222222222222222222222222222222222222222222222222222'
+			message_handler.send_to_slave(slave_message['master_queue'],queue_id)
+			execute_queue = 0
+			acknowledges = 0
+			queue_id += 1
+		else: 
+			message_handler.send_to_slave(slave_message['master_queue'],queue_id)
 		time.sleep(0.1)
-
 
 
 if __name__ == "__main__":

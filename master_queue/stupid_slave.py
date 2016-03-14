@@ -20,14 +20,18 @@ def main():
 		(floor,button) = driver.pop_floor_panel_queue()
 
 		master_message = message_handler.receive_from_master()
+		#floor = master_message['floor']
+		#button = master_message['button']
+		#execute_queue = master_message['execute_queue']
+		#queue_id = master_message['queue_id']
 
-		queue_id = master_message['queue_id']
 
+		message_handler.send_to_master(floor,button,my_id,master_message['queue_id'])
 
+		print int(master_message['floor'])
+		print int(master_message['button'])
 
-		message_handler.send_to_master(floor,button,my_id,queue_id)
-
-			
+		driver.queue_elevator_run(int(master_message['floor']),int(master_message['button']))	
 		
 
 

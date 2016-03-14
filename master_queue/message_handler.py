@@ -16,11 +16,18 @@ class MessageHandler:
 		self.__master_thread_started = False
 		self.__slave_thread_started = False
 		#self.__sending_thread_started = False
-		self.__slave_message = {'master_queue': [0]*16,
+		self.__slave_message = {'master_queue_floor': [0]*4,
+								'master_queue_button': [0]*4,
+								'id': [0]*8,
 								'slave_id': 0,
 								'queue_id': 0}
 
-		self.__master_message = {'master_queue': [0]*16,
+		self.__master_message = {'master_queue_floor': [0]*4,
+								'master_queue_button': [0]*4,
+								'id': [0]*8,
+								'floor': 0, 
+								'button': 0,
+								'execute_queue': 0,
 								'queue_id': 0}
 
 		self.__thread_buffering_master = Thread(target = self.__buffering_master_messages, args = (),)
@@ -36,8 +43,13 @@ class MessageHandler:
 			button = int(message[1])
 			slave_id = int(message[2])
 			queue_id = int(message[3:])
-			self.__slave_message['master_queue'][(floor*4)+2*button] = 1
-			self.__slave_message['master_queue'][(floor*4)+2*button + 1] = random.randint(1,3)
+			
+			self.__slave_message['master_queue_floor'][floor] = 1
+			self.__slave_message['master_queue_button'][button] = 1
+			
+			#for i in range (0,6):
+			#	self.__slave_message['id'][i] = random.randint(1,3)
+
 
 			self.__slave_message['slave_id'] = slave_id
 			self.__slave_message['queue_id'] = queue_id
@@ -45,17 +57,21 @@ class MessageHandler:
 
 
 		return self.__slave_message
+		
 
-
-	def send_to_slave(self,master_queue,queue_id):
+	def send_to_slave(self,master_queue_floor,master_queue_button,execute_queue,queue_id):
 
 		message = str()
+		execute_queue = str(execute_queue)
 		queue_id = str(queue_id)
 		
-		for i in range(0,len(master_queue)):
-			message += str(master_queue[i])	
+		for i in range(0,len(master_queue_floor)):
+			message += str(master_queue_floor[i])
 
+		for i in range(0,len(master_queue_button)):
+			message += str(master_queue_button[i])	
 
+		message += execute_queue
 		message += queue_id
 		
 		for _ in range(0,3):
@@ -83,12 +99,18 @@ class MessageHandler:
 		message = self.__read_message(MASTER_TO_SLAVE_PORT)
 
 		if message is not None:
-			for i in range (0,4):
-					for j in range(0,2):
-						self.__master_message['master_queue'][(i*4)+2*j] = int(message[(i*4)+2*j])
-						self.__master_message['master_queue'][(i*4)+2*j + 1] = int(message[(i*4)+2*j + 1])
+			
+						
+			for i in range (0,4):	
+				self.__master_message['master_queue_floor'][i] = int(message[i])
 
-			self.__master_message['queue_id'] = int(message[16:])
+		
+			for i in range (0,4):	
+				self.__master_message['master_queue_button'][i] = int(message[4+i])
+
+
+			self.__master_message['execute_queue'] = int(message[8])
+			self.__master_message['queue_id'] = int(message[9:])
 		
 		return self.__master_message
 

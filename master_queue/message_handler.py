@@ -7,6 +7,8 @@ from socket import *
 import random 
 
 
+
+
 class MessageHandler:
 	def __init__(self):
 		self.__receive_buffer_slave = [] 
@@ -18,15 +20,16 @@ class MessageHandler:
 		#self.__sending_thread_started = False
 		self.__slave_message = {'master_queue_floor': [0]*4,
 								'master_queue_button': [0]*4,
-								'id': [0]*8,
+								'floor': 0,
+								'button': 0,
 								'slave_id': 0,
 								'queue_id': 0}
 
 		self.__master_message = {'master_queue_floor': [0]*4,
 								'master_queue_button': [0]*4,
-								'id': [0]*8,
-								'floor': 0, 
-								'button': 0,
+								'executer_id': [0]*8,
+								'floor': [0]*4, 
+								'button': [0]*4,
 								'execute_queue': 0,
 								'queue_id': 0}
 
@@ -43,10 +46,13 @@ class MessageHandler:
 			button = int(message[1])
 			slave_id = int(message[2])
 			queue_id = int(message[3:])
-			
+
 			self.__slave_message['master_queue_floor'][floor] = 1
 			self.__slave_message['master_queue_button'][button] = 1
 			
+			#self.__slave_message['floor'] = floor
+			#self.__slave_message['button'] = button
+
 			#for i in range (0,6):
 			#	self.__slave_message['id'][i] = random.randint(1,3)
 
@@ -59,9 +65,10 @@ class MessageHandler:
 		return self.__slave_message
 		
 
-	def send_to_slave(self,master_queue_floor,master_queue_button,execute_queue,queue_id):
+	def send_to_slave(self,master_queue_floor,master_queue_button,executer_id,execute_queue,queue_id):
 
 		message = str()
+
 		execute_queue = str(execute_queue)
 		queue_id = str(queue_id)
 		
@@ -71,6 +78,11 @@ class MessageHandler:
 		for i in range(0,len(master_queue_button)):
 			message += str(master_queue_button[i])	
 
+
+		for i in range(0,len(executer_id)):
+			message += str(executer_id[i])
+
+
 		message += execute_queue
 		message += queue_id
 		
@@ -79,39 +91,34 @@ class MessageHandler:
 			time.sleep(0.001)
 
 
-		#if self.__sending_thread_started is not True:
-		#	self.__thread_sending_slave_messages.start()
-		#self.__sending_slave_messages(message,MASTER_TO_SLAVE_PORT)
-
-
-	def __sending_slave_messages(self,message):
-		'''
-		self.__sending_thread_started = True
-		time = time.time
-		while time < 2: 
-			self.__send(message,MASTER_TO_SLAVE_PORT)
-			time.sleep(0.05)
-		#self.__sending_thread_started = False	
-		#__thread_sending_slave_messages.exit()	
-		'''
 	def receive_from_master(self):
 		
 		message = self.__read_message(MASTER_TO_SLAVE_PORT)
 
 		if message is not None:
-			
-						
-			for i in range (0,4):	
+
+			for i in range (0,4):
 				self.__master_message['master_queue_floor'][i] = int(message[i])
+				self.__master_message['master_queue_button'][i] = int(message[4+i]) 
+			
+			for i in range (0,8):
+				self.__master_message['executer_id'][i] = int(message[8+i])
+			
+			
 
-		
-			for i in range (0,4):	
-				self.__master_message['master_queue_button'][i] = int(message[4+i])
+			for i in range (0,4):
+				if self.__master_message['master_queue_floor'][i] == 1:
+					self.__master_message['floor'][i] = 1 
 
+				if self.__master_message['master_queue_button'][i] == 1:	
+					self.__master_message['button'][i] = 1
 
-			self.__master_message['execute_queue'] = int(message[8])
-			self.__master_message['queue_id'] = int(message[9:])
-		
+			self.__master_message['execute_queue'] = int(message[16])
+			self.__master_message['queue_id'] = int(message[17:])
+			
+			
+
+			
 		return self.__master_message
 
 	def send_to_master(self,floor,button,slave_id,queue_id):

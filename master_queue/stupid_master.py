@@ -14,9 +14,11 @@ def main():
 
 	acknowledged_queue_id = []
 
+
+
+	executer_id = [0]*8
 	while True:
 		
-
 
 
 		slave_message = message_handler.receive_from_slave()
@@ -30,12 +32,12 @@ def main():
 		if acknowledges == active_slaves:
 			execute_queue = 1
 			print '12222222222222222222222222222222222222222222222222222'
-			message_handler.send_to_slave(slave_message['master_queue_floor'],slave_message['master_queue_button'],execute_queue,queue_id)
+			message_handler.send_to_slave(slave_message['master_queue_floor'],slave_message['master_queue_button'],executer_id,execute_queue,queue_id)
 			execute_queue = 0
 			acknowledges = 0
 			queue_id += 1
 		else: 
-			message_handler.send_to_slave(slave_message['master_queue_floor'],slave_message['master_queue_button'],execute_queue,queue_id)
+			message_handler.send_to_slave(slave_message['master_queue_floor'],slave_message['master_queue_button'],executer_id,execute_queue,queue_id)
 		time.sleep(0.1)
 
 

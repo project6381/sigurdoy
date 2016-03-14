@@ -28,10 +28,16 @@ def main():
 
 		message_handler.send_to_master(floor,button,my_id,master_message['queue_id'])
 
-		print int(master_message['floor'])
-		print int(master_message['button'])
 
-		driver.queue_elevator_run(int(master_message['floor']),int(master_message['button']))	
+		for i in range (0,4):
+			if master_message['floor'][i] == 1:
+				run_floor = i
+			if master_message['button'][i] == 1:
+				run_button = i
+
+
+
+				driver.queue_elevator_run(run_floor,run_button)	
 		
 
 

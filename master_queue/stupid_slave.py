@@ -13,6 +13,9 @@ def main():
 	#my_id = get IP address on this computer
 	my_id = 3
 	acknowledge = 4
+	run_floor = 0
+	run_button = 0
+
 	while True:
 		
 		
@@ -37,7 +40,7 @@ def main():
 
 
 
-				driver.queue_elevator_run(run_floor,run_button)	
+		driver.queue_elevator_run(run_floor,run_button)	
 		
 
 
@@ -45,8 +48,9 @@ def main():
 
 		
 
-		print master_message
-		
+		print ['floor:'] + master_message['master_queue_floor'] + ['button:'] + master_message['master_queue_button'] 
+
+				
 
 
 		time.sleep(0.5)

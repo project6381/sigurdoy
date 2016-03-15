@@ -50,11 +50,8 @@ class MessageHandler:
 			self.__slave_message['master_queue_floor'][floor] = 1
 			self.__slave_message['master_queue_button'][button] = 1
 			
-			#self.__slave_message['floor'] = floor
-			#self.__slave_message['button'] = button
-
-			#for i in range (0,6):
-			#	self.__slave_message['id'][i] = random.randint(1,3)
+			self.__slave_message['floor'] = floor 
+			self.__slave_message['button'] = button
 
 
 			self.__slave_message['slave_id'] = slave_id
@@ -107,10 +104,10 @@ class MessageHandler:
 			
 
 			for i in range (0,4):
-				if self.__master_message['master_queue_floor'][i] == 1:
+				if self.__master_message['master_queue_floor'][i] == 1: # and executer_id == my_id
 					self.__master_message['floor'][i] = 1 
 
-				if self.__master_message['master_queue_button'][i] == 1:	
+				if self.__master_message['master_queue_button'][i] == 1: # and executer_id == my_id
 					self.__master_message['button'][i] = 1
 
 			self.__master_message['execute_queue'] = int(message[16])
@@ -138,7 +135,7 @@ class MessageHandler:
 
 	def __read_message(self,port):
 
-		# Check if master or slave thread is already running 
+		# Check if buffering messages threads is already running 
 		if port == MASTER_TO_SLAVE_PORT:
 			if self.__slave_thread_started is not True:
 				self.__start(self.__thread_buffering_slave)

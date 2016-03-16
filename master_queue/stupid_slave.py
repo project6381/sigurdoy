@@ -32,15 +32,12 @@ def main():
 		message_handler.send_to_master(floor,button,my_id,master_message['queue_id'])
 
 
-		for i in range (0,4):
-			if master_message['floor'][i] == 1:
-				run_floor = i
-			if master_message['button'][i] == 1:
-				run_button = i
 
 
 
-		driver.queue_elevator_run(run_floor,run_button)	
+		(run_floor,run_button) = message_handler.get_my_master_order()
+		if run_floor is not None:
+			driver.queue_elevator_run(run_floor,run_button)	
 		
 
 
@@ -48,7 +45,7 @@ def main():
 
 		
 
-		print ['floor:'] + master_message['master_queue_floor'] + ['button:'] + master_message['master_queue_button'] 
+		print ['floor_up:'] + master_message['master_floor_up'] + ['floor_down:'] + master_message['master_floor_down'] 
 
 				
 

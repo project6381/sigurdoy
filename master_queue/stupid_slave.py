@@ -21,19 +21,12 @@ def main():
 		
 
 		(floor,button) = driver.pop_floor_panel_queue()
-
 		master_message = message_handler.receive_from_master()
-		#floor = master_message['floor']
-		#button = master_message['button']
-		#execute_queue = master_message['execute_queue']
-		#queue_id = master_message['queue_id']
-
-
 		message_handler.send_to_master(floor,button,my_id,master_message['queue_id'])
 
 
 
-
+		
 
 		(run_floor,run_button) = message_handler.get_my_master_order()
 		if run_floor is not None:
@@ -42,7 +35,7 @@ def main():
 
 
 		
-
+		
 		
 
 		print ['floor_up:'] + master_message['master_floor_up'] + ['floor_down:'] + master_message['master_floor_down'] 

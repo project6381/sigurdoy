@@ -21,7 +21,6 @@ class MessageHandler:
 		self.__receive_buffer_master_key = Lock()
 		self.__master_thread_started = False
 		self.__slave_thread_started = False
-		#self.__sending_thread_started = False
 		self.__slave_message = {'master_floor_up': [0]*4,
 								'master_floor_down': [0]*4,
 								'floor': 0,
@@ -39,7 +38,6 @@ class MessageHandler:
 
 		self.__thread_buffering_master = Thread(target = self.__buffering_master_messages, args = (),)
 		self.__thread_buffering_slave = Thread(target = self.__buffering_slave_messages, args = (),)
-		#self.__thread_sending_slave_messages = Thread(target = self.__sending_slave_messages, args = (),)
 
 
 	def receive_from_slave(self):				
@@ -54,7 +52,7 @@ class MessageHandler:
 			if button == 0:
 				self.__slave_message['master_floor_up'][floor] = 1
 			elif button == 1:
-				self.__slave_message['master_floor_down'][floor+4] = 1
+				self.__slave_message['master_floor_down'][floor] = 1
 			
 			self.__slave_message['floor'] = floor 
 			self.__slave_message['button'] = button
@@ -112,10 +110,12 @@ class MessageHandler:
 				if self.__master_message['master_floor_up'][i] == 1: # and executer_id == my_id
 					self.__master_message['floor'].append(i) 
 					self.__master_message['button'].append(0)
-				
+					self.__master_message['master_floor_up'][i] = 0
+
 				if self.__master_message['master_floor_down'][i] == 1: # and executer_id == my_id
 					self.__master_message['floor'].append(i)
 					self.__master_message['button'].append(1)
+					self.__master_message['master_floor_down'][i] = 0
 
 			self.__master_message['execute_queue'] = int(message[16])
 			self.__master_message['queue_id'] = int(message[17:])
@@ -127,6 +127,7 @@ class MessageHandler:
 	def get_my_master_order(self):
 		if self.__master_message['floor'] and self.__master_message['button']:
 			return (self.__master_message['floor'].pop(0),self.__master_message['button'].pop(0))
+
 		else: 
 			return (None,None)
 

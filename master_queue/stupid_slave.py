@@ -29,6 +29,7 @@ def main():
 		
 
 		(run_floor,run_button) = message_handler.get_my_master_order()
+		
 		if run_floor is not None:
 			driver.queue_elevator_run(run_floor,run_button)	
 		
@@ -39,7 +40,7 @@ def main():
 		
 
 		print ['floor_up:'] + master_message['master_floor_up'] + ['floor_down:'] + master_message['master_floor_down'] 
-
+		print master_message['queue_id']
 				
 
 

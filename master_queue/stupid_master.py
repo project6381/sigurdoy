@@ -22,8 +22,8 @@ def main():
 
 
 		slave_message = message_handler.receive_from_slave()
-		print ['floor:'] + slave_message['master_floor_up'] + ['button:'] + slave_message['master_floor_down'] 
-
+		print ['floor_up:'] + slave_message['master_floor_up'] + ['floor_down:'] + slave_message['master_floor_down'] 
+		print queue_id
 
 
 		if queue_id == int(slave_message['queue_id']): 

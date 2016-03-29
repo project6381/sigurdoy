@@ -36,6 +36,8 @@ class MessageHandler:
 								'execute_queue': 0,
 								'queue_id': 0}
 
+		self.__slave_queue_id = 0
+
 		self.__thread_buffering_master = Thread(target = self.__buffering_master_messages, args = (),)
 		self.__thread_buffering_slave = Thread(target = self.__buffering_slave_messages, args = (),)
 
@@ -105,17 +107,21 @@ class MessageHandler:
 			for i in range (0,8):
 				self.__master_message['executer_id'][i] = int(message[8+i])
 			
+			self.__master_message['queue_id'] = int(message[17])
 
 			for i in range (0,4):
-				if self.__master_message['master_floor_up'][i] == 1: # and executer_id == my_id
+				if (self.__master_message['master_floor_up'][i] == 1) and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
 					self.__master_message['floor'].append(i) 
 					self.__master_message['button'].append(0)
 					self.__master_message['master_floor_up'][i] = 0
+					self.__slave_queue_id = self.__master_message['queue_id']
 
-				if self.__master_message['master_floor_down'][i] == 1: # and executer_id == my_id
+				if (self.__master_message['master_floor_down'][i] == 1) and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
 					self.__master_message['floor'].append(i)
 					self.__master_message['button'].append(1)
 					self.__master_message['master_floor_down'][i] = 0
+					self.__slave_queue_id = self.__master_message['queue_id']
+
 
 			self.__master_message['execute_queue'] = int(message[16])
 			self.__master_message['queue_id'] = int(message[17:])

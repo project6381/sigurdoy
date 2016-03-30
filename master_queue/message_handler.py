@@ -36,8 +36,10 @@ class MessageHandler:
 		self.__master_message = {'master_floor_up': [0]*4,
 								'master_floor_down': [0]*4,
 								'executer_id': [0]*8,
-								'floor': [], 
-								'button': [], 
+								'floor_up': [0]*4, 
+								'floor_down': [0]*4, 
+								'floor':[],
+								'button':[],
 								'execute_queue': 0,
 								'queue_id': 0}
 
@@ -62,7 +64,6 @@ class MessageHandler:
 			floor_down += str(slave_floor_down[i])
 
 		message = "%s%s%i%i%i%i%i" % (floor_up,floor_down,slave_id,last_floor,next_floor,direction,queue_id)
-		print message
 		self.__send(message,SLAVE_TO_MASTER_PORT)
 
 
@@ -108,25 +109,40 @@ class MessageHandler:
 				self.__master_message['executer_id'][i] = int(message[8+i])
 			
 			self.__master_message['queue_id'] = int(message[17])
+			
+
 
 			for i in range (0,4):
-				if (self.__master_message['master_floor_up'][i] == 1) and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
+				if self.__master_message['floor_up'][i] != self.__master_message['master_floor_up'][i]:
 					self.__master_message['floor'].append(i) 
 					self.__master_message['button'].append(0)
-					self.__slave_queue_id = self.__master_message['queue_id']
+					self.__master_message['floor_up'][i] = self.__master_message['master_floor_up'][i]
+				
+				if self.__master_message['floor_down'][i] != self.__master_message['master_floor_down'][i]:
+					self.__master_message['floor'].append(i) 
+					self.__master_message['button'].append(1)
+					self.__master_message['floor_down'][i] = self.__master_message['master_floor_down'][i]
+			'''
+			for i in range (0,4):
+				if (self.__master_message['master_floor_up'][i] == 1):# and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
+					self.__master_message['floor'].append(i) 
+					self.__master_message['button'].append(0)
+					#self.__master_message['floor_up'] = self.__master_message['master_floor_up']
+					#self.__master_message['floor_down'] = self.__master_message['master_floor_down']
+					#self.__slave_queue_id = self.__master_message['queue_id']
 
-				if (self.__master_message['master_floor_down'][i] == 1) and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
+				if (self.__master_message['master_floor_down'][i] == 1):# and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
 					self.__master_message['floor'].append(i)
 					self.__master_message['button'].append(1)
-					self.__slave_queue_id = self.__master_message['queue_id']
-
+					#self.__master_message['floor_up'] = self.__master_message['master_floor_up']
+					#self.__master_message['floor_down'] = self.__master_message['master_floor_down']
+					#self.__slave_queue_id = self.__master_message['queue_id']
+			'''
 
 			self.__master_message['execute_queue'] = int(message[16])
 			self.__master_message['queue_id'] = int(message[17:])
 			
 		
-		print self.__master_message['floor']
-		print self.__master_message['button']
 		return self.__master_message
 
 
@@ -149,6 +165,10 @@ class MessageHandler:
 
 
 	def get_my_master_order(self):
+		
+
+		print self.__master_message['floor']
+		print self.__master_message['button']
 		if self.__master_message['floor'] and self.__master_message['button']:
 			return (self.__master_message['floor'].pop(0),self.__master_message['button'].pop(0))
 

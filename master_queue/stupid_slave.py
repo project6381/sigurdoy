@@ -39,12 +39,12 @@ def main():
 
 
 
-		#(run_floor,run_button) = message_handler.get_my_master_order()
+		(run_floor,run_button) = message_handler.get_my_master_order()
 		
 		
 
-		#if run_floor is not None:
-		#	driver.queue_elevator_run(run_floor,run_button)	
+		if run_floor is not None:
+			driver.queue_elevator_run(run_floor,run_button)	
 		
 
 

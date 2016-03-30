@@ -1,5 +1,5 @@
 from message_handler import MessageHandler
-from constants import SLAVE_TO_MASTER_PORT, MASTER_TO_SLAVE_PORT
+from constants import SLAVE_TO_MASTER_PORT, MASTER_TO_SLAVE_PORT, DIRN_DOWN, DIRN_UP, DIRN_STOP
 import time
 
 
@@ -14,7 +14,7 @@ def main():
 
 	acknowledged_queue_id = []
 
-
+	last_direction = 0
 
 	executer_id = [0]*8
 	while True:
@@ -25,6 +25,16 @@ def main():
 		print ['floor_up:'] + slave_message['slave_floor_up'] + ['floor_down:'] + slave_message['slave_floor_down'] 
 		print queue_id
 
+		if slave_message['direction'] is not DIRN_STOP:
+			last_direction = slave_message['direction']
+
+
+		if slave_message['last_floor'] == slave_message['next_floor']:
+			if last_direction == DIRN_UP:
+				slave_message['slave_floor_up'][slave_message['last_floor']] = 0
+			if last_direction == DIRN_DOWN:
+				slave_message['slave_floor_down'][slave_message['last_floor']] = 0
+		
 
 		if queue_id == int(slave_message['queue_id']): 
 			acknowledges += 1

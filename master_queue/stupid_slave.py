@@ -35,7 +35,7 @@ def main():
 		master_message = message_handler.receive_from_master()	
 		message_handler.send_to_master(floor_up,floor_down,my_id,position[0],position[1],position[2],master_message['queue_id'])
 
-
+		print position
 
 
 

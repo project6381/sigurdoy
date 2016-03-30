@@ -22,7 +22,7 @@ def main():
 
 
 		slave_message = message_handler.receive_from_slave()
-		print ['floor_up:'] + slave_message['master_floor_up'] + ['floor_down:'] + slave_message['master_floor_down'] 
+		print ['floor_up:'] + slave_message['slave_floor_up'] + ['floor_down:'] + slave_message['slave_floor_down'] 
 		print queue_id
 
 
@@ -33,12 +33,12 @@ def main():
 		if acknowledges == active_slaves:
 			execute_queue = 1
 			print '12222222222222222222222222222222222222222222222222222'
-			message_handler.send_to_slave(slave_message['master_floor_up'],slave_message['master_floor_down'],executer_id,execute_queue,queue_id)
+			message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
 			execute_queue = 0
 			acknowledges = 0
 			queue_id += 1
 		else: 
-			message_handler.send_to_slave(slave_message['master_floor_up'],slave_message['master_floor_down'],executer_id,execute_queue,queue_id)
+			message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
 		time.sleep(0.1)
 
 

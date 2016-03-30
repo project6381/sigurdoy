@@ -16,22 +16,35 @@ def main():
 	run_floor = 0
 	run_button = 0
 
+	floor_up = [0]*4
+	floor_down = [0]*4
+
 	while True:
 		
 		
+		position = driver.read_position()
 
 		(floor,button) = driver.pop_floor_panel_queue()
-		master_message = message_handler.receive_from_master()
-		message_handler.send_to_master(floor,button,my_id,master_message['queue_id'])
+
+		if button == 0:
+			floor_up[floor] = 1
+		elif button == 1: 
+			floor_down[floor] = 1 	
+	
+
+		master_message = message_handler.receive_from_master()	
+		message_handler.send_to_master(floor_up,floor_down,my_id,position[0],position[1],position[2],master_message['queue_id'])
 
 
 
+
+
+		#(run_floor,run_button) = message_handler.get_my_master_order()
+		
 		
 
-		(run_floor,run_button) = message_handler.get_my_master_order()
-		
-		if run_floor is not None:
-			driver.queue_elevator_run(run_floor,run_button)	
+		#if run_floor is not None:
+		#	driver.queue_elevator_run(run_floor,run_button)	
 		
 
 

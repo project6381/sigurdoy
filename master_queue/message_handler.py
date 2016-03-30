@@ -21,11 +21,16 @@ class MessageHandler:
 		self.__receive_buffer_master_key = Lock()
 		self.__master_thread_started = False
 		self.__slave_thread_started = False
-		self.__slave_message = {'master_floor_up': [0]*4,
-								'master_floor_down': [0]*4,
-								'floor': 0,
-								'button': 0,
+
+
+
+
+		self.__slave_message = {'slave_floor_up': [0]*4,
+								'slave_floor_down': [0]*4,
 								'slave_id': 0,
+								'last_floor': 0,
+								'next_floor': 0,
+								'direction': 0,
 								'queue_id': 0}
 
 		self.__master_message = {'master_floor_up': [0]*4,
@@ -42,31 +47,24 @@ class MessageHandler:
 		self.__thread_buffering_slave = Thread(target = self.__buffering_slave_messages, args = (),)
 
 
-	def receive_from_slave(self):				
-		message = self.__read_message(SLAVE_TO_MASTER_PORT)
+
 		
-		if message is not None:
-			floor = int(message[0])
-			button = int(message[1])
-			slave_id = int(message[2])
-			queue_id = int(message[3:])
 
-			if button == 0:
-				self.__slave_message['master_floor_up'][floor] = 1
-			elif button == 1:
-				self.__slave_message['master_floor_down'][floor] = 1
-			
-			self.__slave_message['floor'] = floor 
-			self.__slave_message['button'] = button
-
-
-			self.__slave_message['slave_id'] = slave_id
-			self.__slave_message['queue_id'] = queue_id
-
-
-
-		return self.__slave_message
+	def send_to_master(self,slave_floor_up,slave_floor_down,slave_id,last_floor,next_floor,direction,queue_id):
 		
+		floor_up = str()
+		floor_down = str()
+
+		for i in range(0,len(slave_floor_up)):
+			floor_up += str(slave_floor_up[i])
+
+		for i in range(0,len(slave_floor_down)):
+			floor_down += str(slave_floor_down[i])
+
+		message = "%s%s%i%i%i%i%i" % (floor_up,floor_down,slave_id,last_floor,next_floor,direction,queue_id)
+		print message
+		self.__send(message,SLAVE_TO_MASTER_PORT)
+
 
 	def send_to_slave(self,master_floor_up,master_floor_down,executer_id,execute_queue,queue_id):
 
@@ -94,6 +92,8 @@ class MessageHandler:
 			time.sleep(0.001)
 
 
+
+
 	def receive_from_master(self):
 		
 		message = self.__read_message(MASTER_TO_SLAVE_PORT)
@@ -113,21 +113,39 @@ class MessageHandler:
 				if (self.__master_message['master_floor_up'][i] == 1) and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
 					self.__master_message['floor'].append(i) 
 					self.__master_message['button'].append(0)
-					self.__master_message['master_floor_up'][i] = 0
 					self.__slave_queue_id = self.__master_message['queue_id']
 
 				if (self.__master_message['master_floor_down'][i] == 1) and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
 					self.__master_message['floor'].append(i)
 					self.__master_message['button'].append(1)
-					self.__master_message['master_floor_down'][i] = 0
 					self.__slave_queue_id = self.__master_message['queue_id']
 
 
 			self.__master_message['execute_queue'] = int(message[16])
 			self.__master_message['queue_id'] = int(message[17:])
 			
-			
+		
+		print self.__master_message['floor']
+		print self.__master_message['button']
 		return self.__master_message
+
+
+	def receive_from_slave(self):				
+		message = self.__read_message(SLAVE_TO_MASTER_PORT)
+		
+		if message is not None:
+
+			for i in range (0,4):
+					self.__slave_message['slave_floor_up'][i] = int(message[i])
+					self.__slave_message['slave_floor_down'][i] = int(message[4+i]) 	
+
+			self.__slave_message['slave_id'] = int(message[8])
+			self.__slave_message['last_floor'] = int(message[9])
+			self.__slave_message['next_floor'] = int(message[10])
+			self.__slave_message['direction'] = int(message[11])
+			self.__slave_message['queue_id'] = int(message[12:])
+
+		return self.__slave_message
 
 
 	def get_my_master_order(self):
@@ -137,10 +155,7 @@ class MessageHandler:
 		else: 
 			return (None,None)
 
-	def send_to_master(self,floor,button,slave_id,queue_id):
-		if (floor and button) is not None:
-			message = "%i%i%i%i" % (floor,button,slave_id,queue_id)
-			self.__send(message,SLAVE_TO_MASTER_PORT)
+
 
 
 	def __send(self, data, port):

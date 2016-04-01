@@ -8,9 +8,9 @@ class ElevatorInterface:
 	io = ioLib.ioInterface()
 
 	def set_motor_direction(self, dirn):
-		if dirn == 0:
+		if dirn == 1:
 			self.io.write_analog(channel.MOTOR, 0)
-		elif dirn > 0:
+		elif dirn > 1:
 			self.io.clear_bit(channel.MOTORDIR)
 			self.io.write_analog(channel.MOTOR, const.MOTOR_SPEED)
 		else:

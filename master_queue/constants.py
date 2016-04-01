@@ -1,9 +1,9 @@
 # Constants
 
 # elev_motor_direction
-DIRN_DOWN = -1
-DIRN_STOP = 0
-DIRN_UP = 1
+DIRN_DOWN = 0
+DIRN_STOP = 1
+DIRN_UP = 2
 
 # elev_lamp_type
 BUTTON_CALL_UP = 0

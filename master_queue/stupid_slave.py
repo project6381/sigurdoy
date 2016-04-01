@@ -15,6 +15,8 @@ def main():
 	acknowledge = 4
 	run_floor = 0
 	run_button = 0
+	old_f = None
+	old_but = None
 
 	floor_up = [0]*4
 	floor_down = [0]*4
@@ -24,18 +26,32 @@ def main():
 		
 		position = driver.read_position()
 
+
+		
+
+		master_message = message_handler.receive_from_master()
+		
+		for i in range (0,4):
+			if (master_message['master_floor_up'][i] == 0):
+				floor_up[i] = 0
+
+			if (master_message['master_floor_down'][i] == 0):
+				floor_down[i] = 0
+		
+		time.sleep(0.1)
+
 		(floor,button) = driver.pop_floor_panel_queue()
 
-		if button == 0:
-			floor_up[floor] = 1
-		elif button == 1: 
-			floor_down[floor] = 1 	
-	
+		if floor is not None:
+			if button == 0:
+				floor_up[floor] = 1
+			elif button == 1: 
+				floor_down[floor] = 1 	
 
-		master_message = message_handler.receive_from_master()	
 		message_handler.send_to_master(floor_up,floor_down,my_id,position[0],position[1],position[2],master_message['queue_id'])
+		
 
-		print position
+		print floor_up
 
 
 

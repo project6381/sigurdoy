@@ -11,7 +11,7 @@ def main():
 	active_slaves = 1
 	acknowledges = 0
 	execute_queue = 0
-
+	arivied = 0
 	acknowledged_queue_id = []
 
 	last_direction = 0
@@ -29,26 +29,31 @@ def main():
 			last_direction = slave_message['direction']
 
 
+
 		if slave_message['last_floor'] == slave_message['next_floor']:
-			if last_direction == DIRN_UP:
-				slave_message['slave_floor_up'][slave_message['last_floor']] = 0
-			if last_direction == DIRN_DOWN:
-				slave_message['slave_floor_down'][slave_message['last_floor']] = 0
+			arrived = slave_message['last_floor']	
+		#if last_direction == DIRN_UP:
+		slave_message['slave_floor_up'][arrived] = 0
+		#if last_direction == DIRN_DOWN:
+		slave_message['slave_floor_down'][arrived] = 0
 		
 
-		if queue_id == int(slave_message['queue_id']): 
-			acknowledges += 1
-			print '111111111111111111111111111111111111111111111111111111111'
+		#if queue_id == int(slave_message['queue_id']): 
+		#	acknowledges += 1
+		#	print '111111111111111111111111111111111111111111111111111111111'
 
-		if acknowledges == active_slaves:
-			execute_queue = 1
-			print '12222222222222222222222222222222222222222222222222222'
-			message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
-			execute_queue = 0
-			acknowledges = 0
-			queue_id += 1
-		else: 
-			message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
+		#if acknowledges == active_slaves:
+		#	execute_queue = 1
+		#	print '12222222222222222222222222222222222222222222222222222'
+		#	message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
+		#	execute_queue = 0
+		#	acknowledges = 0
+		#	queue_id += 1
+		#else: 
+		#	message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
+		
+		message_handler.send_to_slave(slave_message['slave_floor_up'],slave_message['slave_floor_down'],executer_id,execute_queue,queue_id)
+		
 		time.sleep(0.1)
 
 

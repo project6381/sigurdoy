@@ -25,17 +25,17 @@ def main():
 		print ['floor_up:'] + slave_message['slave_floor_up'] + ['floor_down:'] + slave_message['slave_floor_down'] 
 		print queue_id
 
-		if slave_message['direction'] is not DIRN_STOP:
-			last_direction = slave_message['direction']
+		#if slave_message['direction'] is not DIRN_STOP:
+		last_direction = slave_message['direction']
 
 
 
 		if slave_message['last_floor'] == slave_message['next_floor']:
 			arrived = slave_message['last_floor']	
-		#if last_direction == DIRN_UP:
-		slave_message['slave_floor_up'][arrived] = 0
-		#if last_direction == DIRN_DOWN:
-		slave_message['slave_floor_down'][arrived] = 0
+			if (last_direction == DIRN_UP) or (last_direction == DIRN_STOP):
+				slave_message['slave_floor_up'][arrived] = 0
+			if (last_direction == DIRN_DOWN) or (last_direction == DIRN_STOP):
+				slave_message['slave_floor_down'][arrived] = 0
 		
 
 		#if queue_id == int(slave_message['queue_id']): 

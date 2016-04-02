@@ -2,28 +2,26 @@ from socket import *
 from threading import Thread, Lock
 import time 
 import broadcast 
-from constants import MASTER_TO_SLAVE_PORT, SLAVE_TO_MASTER_PORT
+from constants import MASTER_TO_SLAVE_PORT, SLAVE_TO_MASTER_PORT, MASTER_TO_MASTER_PORT, N_ELEVATORS
 from socket import *
 import random 
 
 
-
-
-
 class MessageHandler:
-
-
 
 	def __init__(self):
 		self.__receive_buffer_slave = [] 
 		self.__receive_buffer_master = [] 
+		self.__active_masters = [0]*N_ELEVATORS
+		#self.__receive_buffer_master_alive = [] 		
 		self.__receive_buffer_slave_key = Lock()
 		self.__receive_buffer_master_key = Lock()
+		#self.__receive_buffer_master_alive_key = Lock()
+		self.__active_masters_key = Lock()
 		self.__master_thread_started = False
 		self.__slave_thread_started = False
-
-
-
+		self.__master_alive_thread_started = False
+		
 
 		self.__slave_message = {'slave_floor_up': [0]*4,
 								'slave_floor_down': [0]*4,
@@ -43,14 +41,13 @@ class MessageHandler:
 		self.__last_master_floor_up = [0]*4
 		self.__last_master_floor_down = [0]*4
 
+		
 		self.__slave_queue_id = 0
 
 		self.__thread_buffering_master = Thread(target = self.__buffering_master_messages, args = (),)
 		self.__thread_buffering_slave = Thread(target = self.__buffering_slave_messages, args = (),)
-
-
-
-		
+		self.__thread_buffering_master_alive = Thread(target = self.__buffering_master_alive_messages, args = (),)
+	
 
 	def send_to_master(self,slave_floor_up,slave_floor_down,slave_id,last_floor,next_floor,direction,queue_id):
 		
@@ -93,8 +90,6 @@ class MessageHandler:
 			time.sleep(0.001)
 
 
-
-
 	def receive_from_master(self):
 		
 		message = self.__read_message(MASTER_TO_SLAVE_PORT)
@@ -113,33 +108,18 @@ class MessageHandler:
 
 
 			for i in range (0,4):
-				if self.__master_message['last_master_floor_up'][i] != self.__master_message['master_floor_up'][i]: # and id == my_id
+				if self.__last_master_floor_up[i] != self.__master_message['master_floor_up'][i]: # and id == my_id
 					if self.__master_message['master_floor_up'][i] == 1:
 						self.__master_message['floor'].append(i) 
 						self.__master_message['button'].append(0)
-					self.__master_message['last_master_floor_up'][i] = self.__master_message['master_floor_up'][i]
+					self.__last_master_floor_up[i] = self.__master_message['master_floor_up'][i]
 				
-				if self.__master_message['last_master_floor_down'][i] != self.__master_message['master_floor_down'][i]:
+				if self.__last_master_floor_down[i] != self.__master_message['master_floor_down'][i]:
 					if self.__master_message['master_floor_down'][i] == 1:					
 						self.__master_message['floor'].append(i) 
 						self.__master_message['button'].append(1)
-					self.__master_message['last_master_floor_down'][i] = self.__master_message['master_floor_down'][i]
-			'''
-			for i in range (0,4):
-				if (self.__master_message['master_floor_up'][i] == 1):# and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
-					self.__master_message['floor'].append(i) 
-					self.__master_message['button'].append(0)
-					#self.__master_message['floor_up'] = self.__master_message['master_floor_up']
-					#self.__master_message['floor_down'] = self.__master_message['master_floor_down']
-					#self.__slave_queue_id = self.__master_message['queue_id']
+					self.__last_master_floor_down[i] = self.__master_message['master_floor_down'][i]
 
-				if (self.__master_message['master_floor_down'][i] == 1):# and (self.__master_message['queue_id'] > self.__slave_queue_id): # and executer_id == my_id
-					self.__master_message['floor'].append(i)
-					self.__master_message['button'].append(1)
-					#self.__master_message['floor_up'] = self.__master_message['master_floor_up']
-					#self.__master_message['floor_down'] = self.__master_message['master_floor_down']
-					#self.__slave_queue_id = self.__master_message['queue_id']
-			'''
 
 			self.__master_message['execute_queue'] = int(message[16])
 			self.__master_message['queue_id'] = int(message[17:])
@@ -178,6 +158,21 @@ class MessageHandler:
 			return (None,None)
 
 
+	def update_master_alive(self, elevator_id):
+		self.__send(str(elevator_id),MASTER_TO_MASTER_PORT)
+
+		print self.__active_masters
+
+	def check_master_alive(self):	
+
+		if self.__master_alive_thread_started is not True:
+			self.__start(self.__thread_buffering_master_alive)
+
+		for i in range(0,N_ELEVATORS):
+			if self.__active_masters[i] == 1:
+				return i+1
+		return -1 
+
 
 
 	def __send(self, data, port):
@@ -210,8 +205,7 @@ class MessageHandler:
 				with self.__receive_buffer_master_key:
 					return self.__receive_buffer_master.pop(0)
 			else:
-				return None	
-
+				return None
 
 
 	def __start(self,thread):
@@ -256,6 +250,35 @@ class MessageHandler:
 					with self.__receive_buffer_slave_key:
 						self.__receive_buffer_slave.append(message)		
 				last_message = message
+
+	def __buffering_master_alive_messages(self):
+
+		last_message = 'This message will never be heard'
+		self.__master_alive_thread_started = True
+
+		port = ('', MASTER_TO_MASTER_PORT)
+		udp = socket(AF_INET, SOCK_DGRAM)
+		udp.bind(port)
+		udp.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+		downtime = [time.time() + 3]*N_ELEVATORS
+		 
+
+		while True:
+			data, address = udp.recvfrom(1024)
+			message = self.__errorcheck(data)
+			if message is not None:
+				with self.__active_masters_key:
+					self.__active_masters[int(message)-1] = 1		
+					downtime[int(message)-1] = time.time() + 3
+			
+			
+			for i in range(0,N_ELEVATORS):
+				if downtime[i] < time.time():
+					self.__active_masters[i] = 0
+
+
+
 
 
 	def __errorcheck(self,data):

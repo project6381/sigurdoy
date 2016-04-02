@@ -16,10 +16,15 @@ N_FLOORS = 4
 # Number of buttons (and corresponding lamps) on a per-floor basis
 N_BUTTONS = 3
 
+# Number of elevators
+N_ELEVATORS = 2
+
 # MOTOR_SPEED
 MOTOR_SPEED = 2800
 
 #PORTS
 MASTER_TO_SLAVE_PORT = 17852
 SLAVE_TO_MASTER_PORT = 17853
+MASTER_TO_MASTER_PORT = 17854
+
 
